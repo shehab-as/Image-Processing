@@ -21,8 +21,6 @@ using namespace cv;
 void Geometry(Mat);
 //Gray-Scale Option
 void GrayScale(Mat);
-//Histogram Option
-//void Histogramer(Mat);
 
 //Geometry Processing.
 Mat Translate(Mat, int, int);
@@ -38,9 +36,6 @@ Mat PowerLaw(Mat, int, int);
 //NOT DONE.
 Mat HEqualization(Mat, int, int);
 
-//User Interaction.
-void SaveImage(Mat);
-
 //Input Sample: sample.jpg
 //  /Users/shehabmohamed/Desktop/sample.jpg
 int main()
@@ -54,7 +49,6 @@ int main()
 	cout<<"Path of the Image: ";
 	getline(cin, path);
 	stringstream s(path);
-	//cin>>path;
 	SRC = imread(path, CV_LOAD_IMAGE_GRAYSCALE);
 	
 	//Validating till correct image path is inserted.
@@ -71,6 +65,7 @@ int main()
 	cout<<"Choose Type of Processing.\n";
 	cout<<"1- Geometry\n2- Gray-Scale \n3- Histogram\n";
 	cin>>input;
+	printf("\n");
 	switch(input)
 	{
 		case 1:
@@ -80,7 +75,7 @@ int main()
 			GrayScale(SRC);
 			break;
 		case 3:
-			//Histogramer(SRC);
+			HEqualization(SRC, SRC.rows, SRC.cols);
 			break;
 		default:
 			cout<<"Invalid.\n";
@@ -101,11 +96,11 @@ Mat Translate(Mat img, int r, int c)
     cin>>x;
     cout<<"Enter translation in y-axis: \n";
     cin>>y;
-    for(int i=y; i<r; i++)
+    for(int i=0; i<r-x; i++)
     {
-        for(int j=x; j<c; j++)
+        for(int j=0; j<c-y; j++)
         {
-            final.at<uchar>(i,j) = img.at<uchar>(i,j);
+			final.at<uchar>(i+y , j+x) = img.at<uchar>(i, j);
         }
     }
     return final;
@@ -114,7 +109,7 @@ Mat Translate(Mat img, int r, int c)
 //Rotation function
 Mat Rotate(Mat img, int r, int c)
 {
-	cout<<"Rotating.../n";
+	cout<<"Rotating...\n";
     int angle, px, py, x, y;
     Mat final = Mat::zeros(img.size(), img.type());
     cout<<"Enter angle of rotation in range of -90 to 90: \n";
@@ -260,16 +255,23 @@ Mat PowerLaw(Mat img, int r, int c)
 //Histogram Equalization.
 Mat HEqualization(Mat img, int r, int c)
 {
-//	struct Pixel;
-//	{
-//		int index;
-//		int H;
-//	}
+	int N = r*c;
 	
-	int SIZE = r*c;
-	int *HE_Arr = new int[SIZE];
+	struct Pixels
+	{
+		int Intensity[256];
+		int No_Pixels[256];
+	};
+	Pixels H;
+	Pixels HE;
 	
-	delete [] HE_Arr;
+	for(int i=0; i<r; i++)
+	{
+		for(int j=0; j<c; j++)
+		{
+			//To do.
+		}
+	}
 	return img;
 }
 
@@ -286,6 +288,7 @@ void Geometry(Mat SRC)
 	scanf("%d %d %d", &d1, &d2, &d3);
 	unsigned int imageH = SRC.rows;
 	unsigned int imageW = SRC.cols;
+	printf("\n");
 	//system("clear");
 	cout<<"Transforming Image...\n";
 	if(d1)
@@ -296,6 +299,8 @@ void Geometry(Mat SRC)
 	}
 	if(d2 && transformed)
 	{
+		imageH = DST.rows;
+		imageW = DST.cols;
 		DST = Rotate(DST, imageH, imageW);
 		SavedFileName += '-' + Names[1];
 	}
@@ -307,6 +312,8 @@ void Geometry(Mat SRC)
 	}
 	if(d3 && transformed)
 	{
+		imageH = DST.rows;
+		imageW = DST.cols;
 		DST = Scale(DST, imageH, imageW);
 		SavedFileName += '-' + Names[2];
 	}
@@ -330,6 +337,8 @@ void Geometry(Mat SRC)
 
 void GrayScale(Mat SRC)
 {
+	Mat DST;
+	string FileName;
 	int d;
 	int R = SRC.rows, C = SRC.cols;
 	cout<<"Which Gray Level Transformation you want to apply to loaded image?\n";
@@ -339,17 +348,23 @@ void GrayScale(Mat SRC)
 	{
 		case 1:
 			//NOT WORKING.
-			PowerLaw(SRC, R, C);
+			DST = PowerLaw(SRC, R, C);
+			FileName = "PowerLaw Transformation";
 			break;
 		case 2:
-			ImageNegative(SRC, R, C);
+			DST = ImageNegative(SRC, R, C);
+			FileName = "Image-Negative Transformation";
 			break;
 		case 3:
-			LogTransformation(SRC, R, C);
+			DST = LogTransformation(SRC, R, C);
+			FileName = "Log Transformation";
 			break;
 		default:
 			cout<<"Invalid.\n";
 			break;
 	}
+	imshow("Original Image", SRC);
+	imshow(FileName, DST);
+	waitKey(0);
 	
 }
