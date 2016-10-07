@@ -33,7 +33,6 @@ Mat LogTransformation(Mat, int, int);
 Mat PowerLaw(Mat, int, int);
 
 //Histogram Processing.
-//NOT DONE.
 Mat HEqualization(Mat, int, int);
 
 //Input Sample: sample.jpg
@@ -43,7 +42,7 @@ int main()
 	cout<<"CS463: Computer Vision A#1.\n";
 	cout<<"By Shehab Mohamed\n\n";
 	string path;
-	Mat SRC;
+	Mat SRC, DST;
 	
 	//Prompting User to Enter Image Path.
 	cout<<"Path of the Image: ";
@@ -60,10 +59,11 @@ int main()
 		SRC = imread(path, CV_LOAD_IMAGE_GRAYSCALE);
 	}
 
+	imshow("Original Image", SRC);
 	//Taking Inputs from User.
 	int input;
 	cout<<"Choose Type of Processing.\n";
-	cout<<"1- Geometry\n2- Gray-Scale \n3- Histogram\n";
+	cout<<"1- Geometry\n2- Gray-Scale \n3- Histogram Equalization\n";
 	cin>>input;
 	printf("\n");
 	switch(input)
@@ -75,7 +75,9 @@ int main()
 			GrayScale(SRC);
 			break;
 		case 3:
-			HEqualization(SRC, SRC.rows, SRC.cols);
+			DST = HEqualization(SRC, SRC.rows, SRC.cols);
+			imshow("Histogram Equalization", DST);
+			waitKey(0);
 			break;
 		default:
 			cout<<"Invalid.\n";
@@ -255,21 +257,38 @@ Mat PowerLaw(Mat img, int r, int c)
 //Histogram Equalization.
 Mat HEqualization(Mat img, int r, int c)
 {
-	int N = r*c;
-	
-	struct Pixels
+	struct Pixel
 	{
-		int Intensity[256];
-		int No_Pixels[256];
+		int Intensity[256] = {0};
 	};
-	Pixels H;
-	Pixels HE;
-	
+	Pixel OldP;
+	Pixel LUT;
+
+	//Total number of Pixels.
+	double N = r*c;
 	for(int i=0; i<r; i++)
 	{
 		for(int j=0; j<c; j++)
 		{
-			//To do.
+			int p = img.at<uchar>(i, j);
+			OldP.Intensity[p]++;
+		}
+	}
+	double New_p = 0.0;
+	for(int k=0; k<256; k++)
+	{
+		//printf("Pixel Intensity Value (%d) : NoOfPixels (%d)\n", k, OldP.Intensity[k]);
+		New_p += OldP.Intensity[k];
+		
+		LUT.Intensity[k] = (New_p/N)*255.0;
+		//printf("Lut[%d] = %d\n",k, LUT.Intensity[k]);
+	}
+	for(int i=0; i<r; i++)
+	{
+		for(int j=0; j<c; j++)
+		{
+			int p = img.at<uchar>(i, j);
+			img.at<uchar>(i, j) = LUT.Intensity[p];
 		}
 	}
 	return img;
