@@ -126,7 +126,7 @@ Mat Rotate(Mat img, int r, int c)
             x = int((i-px)*cos(angle_radiant))-int((j-py)*sin(angle_radiant)) + px;
             y = int((j-py)*cos(angle_radiant))+int((i-px)*sin(angle_radiant)) + py;
             //Checking values computed.
-            cout<<"x, y: "<<x<<", "<<y<<endl;
+            //cout<<"x, y: "<<x<<", "<<y<<endl;
             if(x < 0 || y < 0 || x > r || y > c)
                 //If Pixel of the Image went out of boundries, give it a black color.
                 final.at<uchar>(i,j) = 0;
@@ -216,8 +216,8 @@ Mat LogTransformation(Mat img, int r, int c)
 			if(img.at<uchar>(i, j) == 0)
 				//To avoid throwing exception when dividing by zero.
 				img.at<uchar>(i, j) = 1;
-			coefficient = 255/log(1 + img.at<uchar>(i, j));
-			int s = (int)coefficient*(int)log(1 + img.at<uchar>(i, j));
+			coefficient = 255/log(1 + img.at<uchar>(i, j));	// c = S/(log(1+r)
+			int s = coefficient*(int)log(1 + img.at<uchar>(i, j));
 			img.at<uchar>(i, j) = s;
 		}
 	}
@@ -228,7 +228,7 @@ Mat LogTransformation(Mat img, int r, int c)
 Mat PowerLaw(Mat img, int r, int c)
 {
 	unsigned long long int coefficient;
-	unsigned long long int L = 255.0;
+	unsigned long long int L = 255;
 	double GAMMA;
 	cout<<"S = c.r^Gamma\n";
 	cout<<"0.5 <= Gamma <= 25.0\n";
@@ -279,7 +279,6 @@ Mat HEqualization(Mat img, int r, int c)
 	{
 		//printf("Pixel Intensity Value (%d) : NoOfPixels (%d)\n", k, OldP.Intensity[k]);
 		New_p += OldP.Intensity[k];
-		
 		LUT.Intensity[k] = (New_p/N)*255.0;
 		//printf("Lut[%d] = %d\n",k, LUT.Intensity[k]);
 	}
@@ -339,7 +338,7 @@ void Geometry(Mat SRC)
 	else if (d3 && !transformed)
 	{
 		DST = Scale(SRC, imageH, imageW);
-		SavedFileName += Names[3];
+		SavedFileName += Names[2];
 	}
 	
 	cout<<"Image Transformation Done.\n";
@@ -366,7 +365,6 @@ void GrayScale(Mat SRC)
 	switch(d)
 	{
 		case 1:
-			//NOT WORKING.
 			DST = PowerLaw(SRC, R, C);
 			FileName = "PowerLaw Transformation";
 			break;
