@@ -17,11 +17,6 @@
 
 using namespace std;
 using namespace cv;
-//Geometry Option
-void Geometry(Mat);
-//Gray-Scale Option
-void GrayScale(Mat);
-
 //Geometry Processing.
 Mat Translate(Mat, int, int);
 Mat Rotate(Mat, int, int);
@@ -30,6 +25,7 @@ Mat Scale(Mat, int, int);
 //Gray-Scale Processing.
 Mat ImageNegative(Mat, int, int);
 Mat LogTransformation(Mat, int, int);
+Mat LogInverse(Mat, int, int);
 Mat PowerLaw(Mat, int, int);
 
 //Histogram Processing.
@@ -37,12 +33,17 @@ Mat HEqualization(Mat, int, int);
 
 //Input Sample: sample.jpg
 //  /Users/shehabmohamed/Desktop/sample.jpg
+
 int main()
 {
-	cout<<"CS463: Computer Vision A#1.\n";
+	cout<<"CS463: Fund. Of Computer Vision A#1.\n";
 	cout<<"By Shehab Mohamed\n\n";
 	string path;
 	Mat SRC, DST;
+	string FileName="";
+	int d1, d2, d3;
+	bool transformed = false;
+	string Names[3] = {"Translated", "Rotated", "Scaled"};
 	
 	//Prompting User to Enter Image Path.
 	cout<<"Path of the Image: ";
@@ -60,54 +61,122 @@ int main()
 	}
 
 	imshow("Original Image", SRC);
+	//int dx = 0, dy = 0;
 	//Taking Inputs from User.
 	int input;
+	unsigned int imageH = SRC.rows, imageW = SRC.cols;
 	cout<<"Choose Type of Processing.\n";
 	cout<<"1- Geometry\n2- Gray-Scale \n3- Histogram Equalization\n";
 	cin>>input;
 	printf("\n");
-	switch(input)
+	
+	if(input == 1)
 	{
-		case 1:
-			Geometry(SRC);
-			break;
-		case 2:
-			GrayScale(SRC);
-			break;
-		case 3:
-			DST = HEqualization(SRC, SRC.rows, SRC.cols);
-			imshow("Histogram Equalization", DST);
-			waitKey(0);
-			break;
-		default:
-			cout<<"Invalid.\n";
-			break;
+		cout<<"Which Transformations you want to apply to loaded image?\n";
+		cout<<"1- Translate \n2- Rotate \n3- Scale\n";
+		cout<<"Input Example: 1 0 1 (Translate & Scale Only)\n";
+		scanf("%d %d %d", &d1, &d2, &d3);
+		printf("\n");
+		if(d1)
+		{
+			DST = Translate(SRC, imageH, imageW);
+			transformed = true;
+			FileName += Names[0];
+		}
+		if(d2 && transformed)
+		{
+			imageH = DST.rows;
+			imageW = DST.cols;
+			DST = Rotate(DST, imageH, imageW);
+			FileName += '-' + Names[1];
+		}
+		else if(d2 && !transformed)
+		{
+			DST = Rotate(SRC, imageH, imageW);
+			transformed = true;
+			FileName += Names[1];
+		}
+		if(d3 && transformed)
+		{
+			imageH = DST.rows;
+			imageW = DST.cols;
+			DST = Scale(DST, imageH, imageW);
+			FileName += '-' + Names[2];
+		}
+		else if (d3 && !transformed)
+		{
+			DST = Scale(SRC, imageH, imageW);
+			FileName += Names[2];
+		}
+//		char save;
+//		cout<<"\nSave Modified Image? (Y/N)\n";
+//		cin>>save;
+//		if(save == 'y' || 'Y')
+//			imwrite(SavedFileName, DST);
+//		waitKey(0);
+
+	}
+	else if(input == 2)		//Grey-Level Transformation
+	{
+		int d;
+		cout<<"Which Gray Level Transformation you want to apply to loaded image?\n";
+		cout<<"1- Power Law \n2- Image Negative \n3- Log Transformation\n4- Inverse Log Transformation\n";
+		cin>>d;
+		switch(d)
+		{
+			case 1:
+				DST = PowerLaw(SRC, imageH, imageW);
+				FileName = "PowerLaw Transformation";
+				break;
+			case 2:
+				DST = ImageNegative(SRC, imageH, imageW);
+				FileName = "Image-Negative Transformation";
+				break;
+			case 3:
+				DST = LogTransformation(SRC, imageH, imageW);
+				FileName = "Log Transformation";
+				break;
+			case 4:
+				DST = LogInverse(SRC, imageH, imageW);
+				FileName = "Inverse Log Transformation";
+				break;
+			default:
+				cout<<"Invalid.\n";
+				break;
+		}
+		
+	}
+	else if(input == 3)		//Histogram Equalization
+	{
+		DST = HEqualization(SRC, imageH, imageW);
+		FileName = "Histogram Equalized";
 	}
 	
+	imshow(FileName, DST);
+	waitKey(0);
 	
     return 0;
 }
-
+/************************** Geometry Processing **************************/
 //Translation function
 Mat Translate(Mat img, int r, int c)
 {
 	cout<<"Translating...\n";
-    int x, y;
-    Mat final = Mat::zeros(img.size(), img.type());
-    cout<<"Enter translation in x-axis: \n";
-    cin>>x;
-    cout<<"Enter translation in y-axis: \n";
-    cin>>y;
-    for(int i=0; i<r-x; i++)
-    {
-        for(int j=0; j<c-y; j++)
-        {
-			final.at<uchar>(i+y , j+x) = img.at<uchar>(i, j);
-        }
-    }
-    return final;
+	int x, y;
+	Mat final = Mat::zeros(img.size(), img.type());
+	cout<<"Enter translation in x-axis: \n";
+	cin>>x;
+	cout<<"Enter translation in y-axis: \n";
+	cin>>y;
+	for(int i=0; i<r-y; i++)
+	{
+		for(int j=0; j<c-x; j++)
+		{
+			final.at<uchar>(i+y, j+x) = img.at<uchar>(i, j);
+		}
+	}
+	return final;
 }
-
 //Rotation function
 Mat Rotate(Mat img, int r, int c)
 {
@@ -117,8 +186,8 @@ Mat Rotate(Mat img, int r, int c)
     cout<<"Enter angle of rotation in range of -90 to 90: \n";
     cin>>angle;
     double angle_radiant = -1*angle*PI/180;
-    px = r/2;
-    py = c/2;
+	px = r/2;
+	py = c/2;
     for(int i=0; i<r; i++)
     {
         for(int j=0; j<c; j++)
@@ -136,7 +205,6 @@ Mat Rotate(Mat img, int r, int c)
     }
     return final;
 }
-
 //Scaling function
 Mat Scale(Mat img, int r, int c)
 {
@@ -187,21 +255,22 @@ Mat Scale(Mat img, int r, int c)
     //Else, there isn't any Scaling. Return Regular image.
     return img;
 }
-
+/************************** Grey-Level Processing **************************/
 //Negative Image
 Mat ImageNegative(Mat img, int r, int c)
 {
 	// S = L - 1 - r
 	//L = 256
+	Mat final = img;
 	for(int i=0; i<r; i++)
 	{
 		for(int j=0; j<c; j++)
 		{
-			int s = 255 - img.at<uchar>(i,j);
-			img.at<uchar>(i,j) = s;
+			int s = 255 - final.at<uchar>(i,j);
+			final.at<uchar>(i,j) = s;
 		}
 	}
-	return img;
+	return final;
 }
 //Log Transformation. (Brighter image)
 Mat LogTransformation(Mat img, int r, int c)
@@ -218,6 +287,27 @@ Mat LogTransformation(Mat img, int r, int c)
 				img.at<uchar>(i, j) = 1;
 			coefficient = 255/log(1 + img.at<uchar>(i, j));	// c = S/(log(1+r)
 			int s = coefficient*(int)log(1 + img.at<uchar>(i, j));
+			img.at<uchar>(i, j) = s;
+		}
+	}
+	
+	return img;
+}
+//Inverse Log Transformation. (Brighter image)
+Mat LogInverse(Mat img, int r, int c)
+{
+	unsigned int coefficient;
+	
+	// S = c*2^(1+r)
+	for(int i=0; i<r; i++)
+	{
+		for(int j=0; j<c; j++)
+		{
+			if(img.at<uchar>(i, j) == 0)
+				//To avoid throwing exception when dividing by zero.
+				img.at<uchar>(i, j) = 1;
+			coefficient = 255/pow(10.0, float(1 + img.at<uchar>(i, j)));	// c = S/2^(1+r)
+			int s = coefficient*(int)pow(10.0, float(1 + img.at<uchar>(i, j)));
 			img.at<uchar>(i, j) = s;
 		}
 	}
@@ -244,7 +334,7 @@ Mat PowerLaw(Mat img, int r, int c)
 				img.at<uchar>(i, j) = 1;
 			coefficient = L/pow((double)img.at<uchar>(i, j), GAMMA);
 			//cout<<pow((double)img.at<uchar>(i, j), GAMMA)<<endl;
-			cout<<coefficient<<endl;
+			//cout<<coefficient<<endl;
 			int s = (int)coefficient*(int)pow((double)img.at<uchar>(i, j), GAMMA);
 			//cout<<s<<endl;
 			img.at<uchar>(i, j) = s;
@@ -253,7 +343,7 @@ Mat PowerLaw(Mat img, int r, int c)
 	
 	return img;
 }
-
+/************************** Histogram Processing **************************/
 //Histogram Equalization.
 Mat HEqualization(Mat img, int r, int c)
 {
@@ -291,97 +381,4 @@ Mat HEqualization(Mat img, int r, int c)
 		}
 	}
 	return img;
-}
-
-void Geometry(Mat SRC)
-{
-	Mat DST;
-	cout<<"Which Transformations you want to apply to loaded image?\n";
-	cout<<"1- Translate \n2- Rotate \n3- Scale\n";
-	cout<<"Input Example: 1 0 1 (Translate & Scale Only)\n";
-	int d1, d2, d3;
-	bool transformed = false;
-	string Names[3] = {"Translated", "Rotated", "Scaled"};
-	string SavedFileName = "";
-	scanf("%d %d %d", &d1, &d2, &d3);
-	unsigned int imageH = SRC.rows;
-	unsigned int imageW = SRC.cols;
-	printf("\n");
-	//system("clear");
-	cout<<"Transforming Image...\n";
-	if(d1)
-	{
-		DST = Translate(SRC, imageH, imageW);
-		transformed = true;
-		SavedFileName += Names[0];
-	}
-	if(d2 && transformed)
-	{
-		imageH = DST.rows;
-		imageW = DST.cols;
-		DST = Rotate(DST, imageH, imageW);
-		SavedFileName += '-' + Names[1];
-	}
-	else if(d2 && !transformed)
-	{
-		DST = Rotate(SRC, imageH, imageW);
-		transformed = true;
-		SavedFileName += Names[1];
-	}
-	if(d3 && transformed)
-	{
-		imageH = DST.rows;
-		imageW = DST.cols;
-		DST = Scale(DST, imageH, imageW);
-		SavedFileName += '-' + Names[2];
-	}
-	else if (d3 && !transformed)
-	{
-		DST = Scale(SRC, imageH, imageW);
-		SavedFileName += Names[2];
-	}
-	
-	cout<<"Image Transformation Done.\n";
-	imshow("Original Image", SRC);
-	imshow(SavedFileName, DST);
-	waitKey(0);
-	char save;
-	cout<<"\nSave Modified Image? (Y/N)\n";
-	cin>>save;
-	if(save == 'y' || 'Y')
-		imwrite(SavedFileName, DST);
-	waitKey(0);
-}
-
-void GrayScale(Mat SRC)
-{
-	Mat DST;
-	string FileName;
-	int d;
-	int R = SRC.rows, C = SRC.cols;
-	cout<<"Which Gray Level Transformation you want to apply to loaded image?\n";
-	cout<<"1- PowerLaw \n2- ImageNegative \n3- LogTransformation\n";
-	cin>>d;
-	switch(d)
-	{
-		case 1:
-			DST = PowerLaw(SRC, R, C);
-			FileName = "PowerLaw Transformation";
-			break;
-		case 2:
-			DST = ImageNegative(SRC, R, C);
-			FileName = "Image-Negative Transformation";
-			break;
-		case 3:
-			DST = LogTransformation(SRC, R, C);
-			FileName = "Log Transformation";
-			break;
-		default:
-			cout<<"Invalid.\n";
-			break;
-	}
-	imshow("Original Image", SRC);
-	imshow(FileName, DST);
-	waitKey(0);
-	
 }
