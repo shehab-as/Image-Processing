@@ -18,8 +18,8 @@
 using namespace std;
 using namespace cv;
 //Geometry Processing.
-Mat Translate(Mat, int, int);
-Mat Rotate(Mat, int, int);
+Mat Translate(Mat, int, int, int&, int&);
+Mat Rotate(Mat, int, int, int, int);
 Mat Scale(Mat, int, int);
 
 //Gray-Scale Processing.
@@ -31,8 +31,13 @@ Mat PowerLaw(Mat, int, int);
 //Histogram Processing.
 Mat HEqualization(Mat, int, int);
 
-//Input Sample: sample.jpg
-//  /Users/shehabmohamed/Desktop/sample.jpg
+////////////////////////////////////////////////////////////////
+//  Input Sample: /Users/shehabmohamed/Desktop/sample.jpg
+////////////////////////////////////////////////////////////////
+
+//Original Values of Translation X-axis, Y-axis.
+//If User decides to translate then rotate. Then we shift angle of rotation Angle + X, Angle + Y
+int X, Y = 0;
 
 int main()
 {
@@ -65,6 +70,8 @@ int main()
 	//Taking Inputs from User.
 	int input;
 	unsigned int imageH = SRC.rows, imageW = SRC.cols;
+	int px = imageH/2;
+	int py = imageW/2;
 	cout<<"Choose Type of Processing.\n";
 	cout<<"1- Geometry\n2- Gray-Scale \n3- Histogram Equalization\n";
 	cin>>input;
@@ -79,7 +86,7 @@ int main()
 		printf("\n");
 		if(d1)
 		{
-			DST = Translate(SRC, imageH, imageW);
+			DST = Translate(SRC, imageH, imageW, X, Y);
 			transformed = true;
 			FileName += Names[0];
 		}
@@ -87,12 +94,14 @@ int main()
 		{
 			imageH = DST.rows;
 			imageW = DST.cols;
-			DST = Rotate(DST, imageH, imageW);
+			px = px + X;
+			py = py + Y;
+			DST = Rotate(DST, imageH, imageW, px, py);
 			FileName += '-' + Names[1];
 		}
 		else if(d2 && !transformed)
 		{
-			DST = Rotate(SRC, imageH, imageW);
+			DST = Rotate(SRC, imageH, imageW, px, py);
 			transformed = true;
 			FileName += Names[1];
 		}
@@ -108,12 +117,6 @@ int main()
 			DST = Scale(SRC, imageH, imageW);
 			FileName += Names[2];
 		}
-//		char save;
-//		cout<<"\nSave Modified Image? (Y/N)\n";
-//		cin>>save;
-//		if(save == 'y' || 'Y')
-//			imwrite(SavedFileName, DST);
-//		waitKey(0);
 
 	}
 	else if(input == 2)		//Grey-Level Transformation
@@ -152,6 +155,14 @@ int main()
 		FileName = "Histogram Equalized";
 	}
 	
+	// Uncomment the following lines if images generated should be saved.
+	//		char save;
+	//		cout<<"\nSave Modified Image? (Y/N)\n";
+	//		cin>>save;
+	//		if(save == 'y' || 'Y')
+	//			imwrite(SavedFileName, DST);
+	//		waitKey(0);
+	
 	imshow(FileName, DST);
 	waitKey(0);
 	
@@ -159,7 +170,7 @@ int main()
 }
 /************************** Geometry Processing **************************/
 //Translation function
-Mat Translate(Mat img, int r, int c)
+Mat Translate(Mat img, int r, int c, int &X, int &Y)
 {
 	cout<<"Translating...\n";
 	int x, y;
@@ -168,6 +179,8 @@ Mat Translate(Mat img, int r, int c)
 	cin>>x;
 	cout<<"Enter translation in y-axis: \n";
 	cin>>y;
+	X = x;
+	Y = y;
 	for(int i=0; i<r-y; i++)
 	{
 		for(int j=0; j<c-x; j++)
@@ -178,16 +191,26 @@ Mat Translate(Mat img, int r, int c)
 	return final;
 }
 //Rotation function
-Mat Rotate(Mat img, int r, int c)
+Mat Rotate(Mat img, int r, int c, int px, int py)
 {
 	cout<<"Rotating...\n";
-    int angle, px, py, x, y;
+    int angle, x, y;
+	int PX, PY;
+	cout<<"Enter the arbitrary point of rotation for the image. \n";
+	cout<<"If Image should rotate on the center. Enter -1 in Px & Py \n";
+	cout<<"Px: ";
+	cin>>PX;
+	cout<<"Py: ";
+	cin>>PY;
+	if(PX != -1 || PY != -1)
+	{
+		px = PX;
+		py = PY;
+	}
     Mat final = Mat::zeros(img.size(), img.type());
     cout<<"Enter angle of rotation in range of -90 to 90: \n";
     cin>>angle;
     double angle_radiant = -1*angle*PI/180;
-	px = r/2;
-	py = c/2;
     for(int i=0; i<r; i++)
     {
         for(int j=0; j<c; j++)
@@ -287,6 +310,7 @@ Mat LogTransformation(Mat img, int r, int c)
 				img.at<uchar>(i, j) = 1;
 			coefficient = 255/log(1 + img.at<uchar>(i, j));	// c = S/(log(1+r)
 			int s = coefficient*(int)log(1 + img.at<uchar>(i, j));
+			cout<<s<<endl;
 			img.at<uchar>(i, j) = s;
 		}
 	}
@@ -294,6 +318,7 @@ Mat LogTransformation(Mat img, int r, int c)
 	return img;
 }
 //Inverse Log Transformation. (Brighter image)
+//Not Working properly.
 Mat LogInverse(Mat img, int r, int c)
 {
 	unsigned int coefficient;
@@ -306,8 +331,13 @@ Mat LogInverse(Mat img, int r, int c)
 			if(img.at<uchar>(i, j) == 0)
 				//To avoid throwing exception when dividing by zero.
 				img.at<uchar>(i, j) = 1;
-			coefficient = 255/pow(10.0, float(1 + img.at<uchar>(i, j)));	// c = S/2^(1+r)
-			int s = coefficient*(int)pow(10.0, float(1 + img.at<uchar>(i, j)));
+			
+			//coefficient = int(255.0/pow(10.0, double(1.0 + img.at<uchar>(i, j))));	// c = S/2^(1+r)
+			int s = int(255.0/pow(10.0, double(1.0 + img.at<uchar>(i, j))))*pow(10.0, double(1.0 + img.at<uchar>(i, j)));
+			cout<<s<<endl;
+			//double ppp;
+			//ppp = pow(10.0, double(1.0 + img.at<uchar>(i, j)));
+			cout<<coefficient<<endl;
 			img.at<uchar>(i, j) = s;
 		}
 	}
@@ -347,37 +377,32 @@ Mat PowerLaw(Mat img, int r, int c)
 //Histogram Equalization.
 Mat HEqualization(Mat img, int r, int c)
 {
-	struct Pixel
-	{
-		int Intensity[256] = {0};
-	};
-	Pixel OldP;
-	Pixel LUT;
+	int Old_Intensity[256] = {0};
+	int New_Intensity[256] = {0};
 
-	//Total number of Pixels.
 	double N = r*c;
 	for(int i=0; i<r; i++)
 	{
 		for(int j=0; j<c; j++)
 		{
 			int p = img.at<uchar>(i, j);
-			OldP.Intensity[p]++;
+			Old_Intensity[p]++;
 		}
 	}
 	double New_p = 0.0;
 	for(int k=0; k<256; k++)
 	{
-		//printf("Pixel Intensity Value (%d) : NoOfPixels (%d)\n", k, OldP.Intensity[k]);
-		New_p += OldP.Intensity[k];
-		LUT.Intensity[k] = (New_p/N)*255.0;
-		//printf("Lut[%d] = %d\n",k, LUT.Intensity[k]);
+		//printf("Pixel Intensity Value (%d) : NoOfPixels (%d)\n", k, Old_Intensity[k]);
+		New_p += Old_Intensity[k];
+		New_Intensity[k] = (New_p/N)*255.0;
+		//printf("New_Intensity[%d] = %d\n",k, New_Intensity[k]);
 	}
 	for(int i=0; i<r; i++)
 	{
 		for(int j=0; j<c; j++)
 		{
 			int p = img.at<uchar>(i, j);
-			img.at<uchar>(i, j) = LUT.Intensity[p];
+			img.at<uchar>(i, j) = New_Intensity[p];
 		}
 	}
 	return img;
