@@ -33,6 +33,7 @@ Mat HEqualization(Mat, int, int);
 
 ////////////////////////////////////////////////////////////////
 //  Input Sample: /Users/shehabmohamed/Desktop/sample.jpg
+//  Input Sample2: /Users/shehabmohamed/Desktop/Test.jpg
 ////////////////////////////////////////////////////////////////
 
 //Original Values of Translation X-axis, Y-axis.
@@ -66,7 +67,6 @@ int main()
 	}
 
 	imshow("Original Image", SRC);
-	//int dx = 0, dy = 0;
 	//Taking Inputs from User.
 	int input;
 	unsigned int imageH = SRC.rows, imageW = SRC.cols;
@@ -314,15 +314,13 @@ Mat LogTransformation(Mat img, int r, int c)
 			img.at<uchar>(i, j) = s;
 		}
 	}
-	///Users/shehabmohamed/Desktop/Unknown.jpg
 	return img;
 }
-//Inverse Log Transformation. (Brighter image)
+//Inverse Log Transformation. (Darker image)
 Mat LogInverse(Mat img, int r, int c)
 {
 	float coefficient;
-	
-	// S = c*2^(1+r)
+
 	for(int i=0; i<r; i++)
 	{
 		for(int j=0; j<c; j++)
@@ -343,26 +341,20 @@ Mat LogInverse(Mat img, int r, int c)
 //Power-Law Transformation.
 Mat PowerLaw(Mat img, int r, int c)
 {
-	double coefficient;
-	double L = 255.0;
 	double GAMMA;
 	cout<<"S = c.r^Gamma\n";
-	cout<<"0.5 <= Gamma <= 25.0\n";
+	cout<<"0.05 <= Gamma <= 5.0\n";
 	cout<<"Gamma: ";
 	cin>>GAMMA;
+	double coefficient = pow(255.0, 1.0 - GAMMA);
 	// S = c.r^GAMMA
+	
 	for(int i=0; i<r; i++)
 	{
 		for(int j=0; j<c; j++)
 		{
-			if(img.at<uchar>(i, j) == 0)
-				//To avoid throwing exception when dividing by zero.
-				img.at<uchar>(i, j) = 1;
-			coefficient = L/pow((double)img.at<uchar>(i, j), GAMMA);
-			//cout<<pow((double)img.at<uchar>(i, j), GAMMA)<<endl;
-			//cout<<coefficient<<endl;
-			int s = (int)coefficient*(int)pow((double)img.at<uchar>(i, j), GAMMA);
-			//cout<<s<<endl;
+			double s = coefficient*(pow(double(img.at<uchar>(i, j)), GAMMA));
+			cout<<s<<endl;
 			img.at<uchar>(i, j) = s;
 		}
 	}
