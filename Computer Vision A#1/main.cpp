@@ -298,7 +298,7 @@ Mat ImageNegative(Mat img, int r, int c)
 //Log Transformation. (Brighter image)
 Mat LogTransformation(Mat img, int r, int c)
 {
-	unsigned int coefficient;
+	double coefficient;
 	
 	// S = c*log(1+r)
 	for(int i=0; i<r; i++)
@@ -308,20 +308,19 @@ Mat LogTransformation(Mat img, int r, int c)
 			if(img.at<uchar>(i, j) == 0)
 				//To avoid throwing exception when dividing by zero.
 				img.at<uchar>(i, j) = 1;
-			coefficient = 255/log(1 + img.at<uchar>(i, j));	// c = S/(log(1+r)
-			int s = coefficient*(int)log(1 + img.at<uchar>(i, j));
+			coefficient = 255/log(256.0);	// c = S/(log(1+L)
+			double s = coefficient*log(1 + img.at<uchar>(i, j));
 			cout<<s<<endl;
 			img.at<uchar>(i, j) = s;
 		}
 	}
-	
+	///Users/shehabmohamed/Desktop/Unknown.jpg
 	return img;
 }
 //Inverse Log Transformation. (Brighter image)
-//Not Working properly.
 Mat LogInverse(Mat img, int r, int c)
 {
-	unsigned int coefficient;
+	float coefficient;
 	
 	// S = c*2^(1+r)
 	for(int i=0; i<r; i++)
@@ -332,12 +331,9 @@ Mat LogInverse(Mat img, int r, int c)
 				//To avoid throwing exception when dividing by zero.
 				img.at<uchar>(i, j) = 1;
 			
-			//coefficient = int(255.0/pow(10.0, double(1.0 + img.at<uchar>(i, j))));	// c = S/2^(1+r)
-			int s = int(255.0/pow(10.0, double(1.0 + img.at<uchar>(i, j))))*pow(10.0, double(1.0 + img.at<uchar>(i, j)));
+			coefficient = 255.0/log(255.0 + 1.0);
+			int s = (pow(exp(img.at<uchar>(i, j)), 1/coefficient)) - 1;
 			cout<<s<<endl;
-			//double ppp;
-			//ppp = pow(10.0, double(1.0 + img.at<uchar>(i, j)));
-			cout<<coefficient<<endl;
 			img.at<uchar>(i, j) = s;
 		}
 	}
@@ -347,8 +343,8 @@ Mat LogInverse(Mat img, int r, int c)
 //Power-Law Transformation.
 Mat PowerLaw(Mat img, int r, int c)
 {
-	unsigned long long int coefficient;
-	unsigned long long int L = 255;
+	double coefficient;
+	double L = 255.0;
 	double GAMMA;
 	cout<<"S = c.r^Gamma\n";
 	cout<<"0.5 <= Gamma <= 25.0\n";
